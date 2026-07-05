@@ -1,0 +1,20 @@
+{
+  "include": ["exports/**/*.*", "internal/**/*.*", "types/**/*.*"],
+  "compilerOptions": {
+    "skipDefaultLibCheck": true,
+    "strict": true,
+    "target": "ESNext",
+    "allowSyntheticDefaultImports": true,
+    "useDefineForClassFields": false,
+    "noImplicitAny": true,
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "allowJs": true,
+    "checkJs": true,
+    "verbatimModuleSyntax": true,
+    "noImplicitOverride": true
+  }
+}
