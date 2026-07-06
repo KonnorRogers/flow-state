@@ -1,4 +1,4 @@
-# `flow-state`
+# `downflow`
 
 ## WIP: Come back later
 
@@ -10,7 +10,7 @@ I eventually want to look into how you can hook up component-like rendering as w
 
 The basic idea is: "You have HTML from a server, you know the app state from the server, there's no reason you shouldn't be able to use that and be able to update all the places that need it"
 
-Right now im affectionately calling it "flow-state", with the idea being data "flows" down.
+Right now im affectionately calling it "downflow", with the idea being data "flows" down.
 
 ## Documentation
 

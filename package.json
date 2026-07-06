@@ -1,7 +1,7 @@
 {
-  "name": "flow-state",
-  "version": "0.0.1",
-  "description": "Server rendered HTML, client reactivity",
+  "name": "downflow",
+  "version": "0.0.0",
+  "description": "Server rendered HTML, client resumability",
   "main": "./exports/application.js",
   "module": "./exports/application.js",
   "types": "./exports/application.d.ts",
@@ -55,11 +55,11 @@
   },
   "keywords": [],
   "license": "MIT",
-  "repository": "git@github.com:KonnorRogers/flow-state.git",
+  "repository": "git@github.com:KonnorRogers/downflow.git",
   "bugs": {
-    "url": "https://github.com/KonnorRogers/flow-state/issues"
+    "url": "https://github.com/KonnorRogers/downflow/issues"
   },
-  "homepage": "https://github.com/KonnorRogers/flow-state",
+  "homepage": "https://github.com/KonnorRogers/downflow",
   "author": "KonnorRogers <konnor5456@gmail.com>",
   "publishConfig": {
     "access": "public"
@@ -78,7 +78,7 @@
     "@web/test-runner-playwright": "^0.11.0",
     "esbuild": "^0.23.0",
     "fdir": "^6.3.0",
-    "flow-state": "file:.",
+    "downflow": "file:.",
     "gh-pages": "^6.1.1",
     "glob": "^10.4.1",
     "globby": "^14.0.2",

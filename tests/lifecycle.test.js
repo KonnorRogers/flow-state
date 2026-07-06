@@ -1,6 +1,6 @@
 import { aTimeout, fixture, html } from "@open-wc/testing-helpers";
 import { assert } from "@esm-bundle/chai";
-import { Application, Controller } from "flow-state";
+import { Application, Controller } from "downflow";
 import Sinon from "sinon";
 
 setup(() => {

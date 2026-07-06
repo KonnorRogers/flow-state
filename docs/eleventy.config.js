@@ -30,7 +30,7 @@ export default async function (eleventyConfig) {
   flowStateDirectories.forEach((dir) => {
     const resolvedDir = path.join(root, dir)
     eleventyConfig.addPassthroughCopy({
-      [resolvedDir]: path.join('flow-state', dir),
+      [resolvedDir]: path.join('downflow', dir),
     })
 
     eleventyConfig.addWatchTarget(resolvedDir)
