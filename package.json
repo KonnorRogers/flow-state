@@ -1,6 +1,6 @@
 {
   "name": "flow-state",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Server rendered HTML, client reactivity",
   "main": "./exports/application.js",
   "module": "./exports/application.js",
