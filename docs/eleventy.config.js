@@ -19,16 +19,16 @@ const flowStateDirectories = [
 ]
 
 export default async function (eleventyConfig) {
-  eleventyConfig.addPlugin(litPlugin, {
-    mode: 'worker',
-    componentModules: webawesomeComponents,
-  });
+  // eleventyConfig.addPlugin(litPlugin, {
+  //   mode: 'worker',
+  //   componentModules: webawesomeComponents,
+  // });
   eleventyConfig.addPassthroughCopy({
     [webawesomeDir]: 'webawesome',
   });
 
   flowStateDirectories.forEach((dir) => {
-    const resolvedDir = path.join('../', dir)
+    const resolvedDir = path.join(root, dir)
     eleventyConfig.addPassthroughCopy({
       [resolvedDir]: path.join('flow-state', dir),
     })

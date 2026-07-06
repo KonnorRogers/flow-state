@@ -1,4 +1,8 @@
+import { ActionParser } from "../internal/action-parser.js";
 import { Controller } from "./controller.js"
+
+
+class GlobalController extends Controller {}
 
 export { Controller }
 
@@ -8,6 +12,7 @@ export { Controller }
  * @property {string} [RegistryOptions.controllerAttribute="flow-controller"]
  * @property {string} [RegistryOptions.targetAttribute="flow-target"]
  * @property {string} [RegistryOptions.textAttribute="flow-text"]
+ * @property {string} [RegistryOptions.actionAttribute="flow-action"]
  */
 
 /**
@@ -70,27 +75,81 @@ export class Application {
     this._targetConnectionMap = new Map();
 
     /**
+     * String keyed cached so we can cache parse results.
+     * @type {Map<string, import("../internal/action-parser.js").ParsedAction>}
+     */
+    this._actionCache = new Map()
+
+    /**
      * If the registry has started listening for new elements.
      * @type {boolean}
      */
     this.started = false
 
     /**
-     * The attribute to use for finding a controller. Defaults to "lite-controller".
+     * The attribute to use for finding a controller. Defaults to "flow-controller".
      * @type {string}
      */
     this.controllerAttribute = options.controllerAttribute || "flow-controller"
 
     /**
-     * The attribute to use for finding targets. Defaults to "lite-target".
+     * The attribute to use for finding targets. Defaults to "flow-target".
      * @type {string}
      */
     this.targetAttribute = options.targetAttribute || "flow-target"
 
+
+    /**
+     * The attribute to use for finding text updates. Defaults to "flow-target".
+     * @type {string}
+     */
     this.textAttribute = options.textAttribute || "flow-text"
+
+    /**
+     * The attribute to use for finding actions. Defaults to "flow-action".
+     * @type {string}
+     */
+    this.actionAttribute = options.actionAttribute || "flow-action"
+
+    this.modifierSchema = /** @const */ ({
+      ctrl: "ctrlKey",
+      alt: "altKey",
+      meta: "metaKey",
+      shift: "shiftKey",
+    })
+
+    /**
+     * @type {Record<string, string | RegExp>}
+     */
+    this.keymapSchema = {
+      enter: "Enter",
+      tab: `Tab`,
+      esc: `Escape`,
+      space: ` `,
+      up: `ArrowUp`,
+      down: `ArrowDown`,
+      left: `ArrowLeft`,
+      right: `ArrowRight`,
+      home: `Home`,
+      end: `End`,
+      page_up: `PageUp`,
+      page_down: `PageDown`,
+      [`[a-z]`]: /[a-z]/,
+      [`[0-9]`]: /[0-9]/,
+    }
+
+    this._watchedAttributes = [
+      this.controllerAttribute,
+      this.targetAttribute,
+      this.textAttribute,
+      this.actionAttribute
+    ]
 
     this.stores = {}
     this.context = {}
+    this.register(GlobalController, "global")
+    this._createControllerInstance("global", this.rootElement)
+    this.globalController = this.getController(this.rootElement, "global")
   }
 
   /**
@@ -101,27 +160,33 @@ export class Application {
     let els = []
 
     if (key) {
-      els = document.querySelectorAll(`[flow-text='${key}']`)
+      const query = `[${this.textAttribute}='${key}']`
+      els = document.querySelectorAll(query)
     } else {
-      els = document.querySelectorAll("[flow-text]")
+      const query = `[${this.textAttribute}]`
+      els = document.querySelectorAll(query)
     }
 
     els.forEach((el) => {
-      const key = el.getAttribute("flow-text")
+      const key = el.getAttribute(this.textAttribute)
       if (!key) { return }
 
       const keys = key.split(/\./g)
-      const value = dig(el, ...keys)
+      let value = dig(this, ...keys)
       if (el.textContent !== value) {
-        if (!value) {
-          el.textContent = ""
-        }
-
-        if (typeof value === "string") {
-          el.textContent = value
-        }
+        if (value == null) { value = "" }
+        el.textContent = value.toString()
       }
     })
+  }
+
+  /**
+   * @param {string} name
+   * @param {(event: Event) => any} fn
+   */
+  registerGlobalFunction (name, fn) {
+    // @ts-expect-error
+    GlobalController.prototype[name] = fn
   }
 
   /**
@@ -129,7 +194,7 @@ export class Application {
    * @param {RegistryOptions} options
    */
   start (options = {}) {
-    this.rootElement = options.rootElement || document.documentElement
+    this.rootElement = options.rootElement || document.documentElement || this.rootElement
 
     if (options.controllerAttribute) {
       this.controllerAttribute = options.controllerAttribute
@@ -139,10 +204,26 @@ export class Application {
       this.targetAttribute = options.targetAttribute
     }
 
+    if (options.textAttribute) {
+      this.textAttribute = options.textAttribute
+    }
+
+    if (options.actionAttribute) {
+      this.actionAttribute = options.actionAttribute
+    }
+
+    this._watchedAttributes = [
+      this.controllerAttribute,
+      this.targetAttribute,
+      this.textAttribute,
+      this.actionAttribute
+    ]
+
     if (!this.started) {
       this._observe();
       this.started = true
     }
+    this._upgradeAllElements(this.rootElement)
     return this
   }
 
@@ -231,6 +312,8 @@ export class Application {
           continue
         } else if (m.attributeName === this.targetAttribute) {
           this._handleTargetAttributeMutation(m)
+        } else if (m.attributeName === this.actionAttribute) {
+          this._handleActionAttributeMutation(m)
         }
       }
       // childList
@@ -260,12 +343,16 @@ export class Application {
   }
 
   /**
-   * @param {HTMLElement} element
+   * @param {HTMLElement | ShadowRoot} element
    */
   _upgradeAllElements = (element) => {
-    if(element.nodeType !== 1) return;
+    if (!("querySelectorAll" in element)) { return }
 
     this._upgradeElement(element)
+
+    // const query = this._watchedAttributes.map((attr) => {
+    //   return `[${attr}]`
+    // }).join(", ")
 
     element.querySelectorAll("*").forEach((el) => {
       this._upgradeElement(/** @type {HTMLElement} */ (el))
@@ -273,16 +360,25 @@ export class Application {
   }
 
   /**
-   * @param {HTMLElement} element
+   * @param {HTMLElement | ShadowRoot} element
    */
   _upgradeElement(element) {
-    if(element.nodeType !== 1) return;
+    if (!("getAttribute" in element)) { return }
 
     const controllers = element.getAttribute(this.controllerAttribute)
 
     if (controllers) {
       this._attributeToControllers(controllers).forEach((controllerName) => {
         this._createControllerInstance(controllerName, element);
+      })
+    }
+
+    const eventAttr = element.getAttribute(this.actionAttribute)
+    if (eventAttr) {
+      const parsedActions = this._parseActionsFromActionAttribute(eventAttr)
+
+      parsedActions.forEach((parsedAction) => {
+        this.addParsedActionToElement(parsedAction, element)
       })
     }
   }
@@ -384,6 +480,7 @@ export class Application {
 
       inst.initialize()
       controllerInstanceMap.set(controllerName, inst);
+      console.log({ inst })
     }
 
     if (!inst.isConnected) {
@@ -513,7 +610,19 @@ export class Application {
         this._downgradeTargetForAttribute(target, targetName, controller)
       })
     })
+  }
 
+  /**
+   * @param {MutationRecord} mutation
+   */
+  _handleActionAttributeMutation (mutation) {
+    if (!mutation.attributeName) return
+
+    if (mutation.attributeName !== this.actionAttribute) {
+      return
+    }
+
+    // TODO: need to handle attribute mutations.
   }
 
   /**
@@ -558,7 +667,7 @@ export class Application {
   }
 
   /**
-    * Finds all `[lite-target~=<controller>.<target>]`
+    * Finds all `[flow~=<controller>.<target>]`
     * @param {string} controllerName -
     * @param {string} targetName
     * @return {string}
@@ -636,6 +745,27 @@ export class Application {
 
   /**
    * @param {string} str
+   * @return {Array<import("../internal/action-parser.js").ParsedAction>}
+   */
+  _parseActionsFromActionAttribute (str) {
+    /** @type {Array<import("../internal/action-parser.js").ParsedAction>} */
+    const parsedActions = []
+
+    str.trim().split(/\s+/).forEach((str) => {
+      str = str.trim()
+      if (str) {
+        const parsedAction = new ActionParser(str).parse()
+        if (parsedAction.error) { return }
+
+        parsedActions.push(parsedAction)
+      }
+    })
+
+    return parsedActions
+  }
+
+  /**
+   * @param {string} str
    * @return {Record<string, Array<string>>}
    */
   _parseControllersAndTargetsFromTargetAttribute (str) {
@@ -658,6 +788,126 @@ export class Application {
     })
 
     return finalObj
+  }
+
+  /**
+   * @param {import("../internal/action-parser.js").ParsedAction} parsedAction
+   * @param {HTMLElement} element
+   */
+  addParsedActionToElement (parsedAction, element) {
+    if (parsedAction.error) { return }
+
+    const {
+      controllerFunction,
+      controllerName,
+      eventName,
+      globalTarget,
+      eventModifier,
+      additionalEventModifiers,
+      actionOptions
+    } = parsedAction
+
+    const keymapSchema = this.keymapSchema
+    const modifierSchema = this.modifierSchema
+    const self = this
+
+    const globalController = this.globalController
+
+    /**
+      * @param {Event} evt
+      */
+    const fn = function (evt) {
+      let shouldCallFunction = true
+
+      // The controller may not always be at the element level. We need to search for its closest parent controller, we use closest on the target *IN CASE* the controller is defined on the current element.
+      let closestControllerElement = null
+
+      if (controllerName === "global") {
+        closestControllerElement = globalController
+      } else {
+        closestControllerElement = element?.closest(self._controllerQuery(controllerName))
+      }
+
+      console.log({ closestControllerElement })
+
+      if (!closestControllerElement) {
+        // TODO: Should we throw an error if no controller found? Maybe in debug logs?
+        return
+      }
+
+      let controller = null
+
+      if (controllerName === "global") {
+        controller = globalController
+      } else {
+        controller = self.getController(/** @type {HTMLElement} */ (closestControllerElement), controllerName)
+      }
+
+      console.log({ controller })
+      // This will need to check the keymapSchema to see if it should fire.
+      if (eventModifier && evt instanceof KeyboardEvent) {
+        // Make it false so we have to override it in the loop.
+        shouldCallFunction = false
+        for (const [key, value] of Object.entries(keymapSchema)) {
+          const keyRegex = new RegExp(key)
+
+          if (eventModifier.match(keyRegex)) {
+            // Now we know they want this key.
+            if (evt.key.match(value)) {
+              if (additionalEventModifiers.length > 0) {
+                shouldCallFunction = additionalEventModifiers.every((modifier) => {
+                  const evtKey = /** @type {keyof typeof evt} */ (
+                    modifierSchema[/** @type {keyof typeof modifierSchema} */ (modifier)]
+                  )
+
+                  return evt[evtKey] === true
+                })
+
+                if (shouldCallFunction) { break }
+              } else {
+                shouldCallFunction = true
+                break
+              }
+            }
+          }
+        }
+      }
+
+      if (shouldCallFunction) {
+        // @ts-expect-error
+        controller[controllerFunction].call(controller, evt)
+      }
+    }
+
+    if (globalTarget) {
+      // @ts-expect-error
+      const target = globalThis[globalTarget]
+
+      if (!target) {
+        throw Error(`${target} does not exist on "globalThis"`)
+      }
+
+      if (typeof target.addEventListener !== "function") {
+        throw Error(`${target} does not have an "addEventListener" function`)
+      }
+
+      element = target
+    }
+
+    /**
+     * @type {Record<string, boolean>}
+     */
+    const options = {}
+    actionOptions.forEach((option) => {
+      if (option.startsWith("!")) {
+        options[option.slice(1)] = false
+        return
+      }
+
+      options[option] = true
+    })
+
+    element.addEventListener(eventName, fn, options)
   }
 }
 
