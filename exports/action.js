@@ -6,7 +6,7 @@ export class Action {
   /**
    * @param {T} parsedAction
    */
-  constructor (parsedAction) {
-    this.parsedAction = parsedAction
+  constructor(parsedAction) {
+    this.parsedAction = parsedAction;
   }
 }

@@ -26,28 +26,27 @@ export class ActionParser {
   /**
    * @param {string} input
    */
-  constructor (input) {
+  constructor(input) {
     /**
      * @type {string}
      */
-    this.input = input
+    this.input = input;
   }
 
   /**
    * At minimum, an action needs an eventName, controllerFunction, and controllerName
    */
-  static NoEventNameError = "No event name found"
-  static NoControllerFunctionError = "No controller function name found"
-  static NoControllerNameError = "No controller name found"
+  static NoEventNameError = "No event name found";
+  static NoControllerFunctionError = "No controller function name found";
+  static NoControllerNameError = "No controller name found";
 
   /**
    * @return {ParsedAction}
    */
-  parse () {
-
+  parse() {
     /**
-    * @type {ParsedAction}
-    */
+     * @type {ParsedAction}
+     */
     const obj = {
       eventName: "",
       eventModifier: "",
@@ -56,66 +55,67 @@ export class ActionParser {
       controllerName: "",
       controllerFunction: "",
       actionOptions: [],
-      error: false
-    }
+      error: false,
+    };
 
-    const scanner = new StringScanner(this.input)
+    const scanner = new StringScanner(this.input);
 
-    const ctor = /** @type {typeof ActionParser} */ (this.constructor)
+    const ctor = /** @type {typeof ActionParser} */ (this.constructor);
 
     // The order of the following parsers matters.
-    let { eventName, eventModifier, additionalEventModifiers } = this.parseEvent(scanner)
+    let { eventName, eventModifier, additionalEventModifiers } =
+      this.parseEvent(scanner);
 
     if (!eventName) {
       /**
        * No event name found. No-op here and let it fail validation.
        */
-      obj.error = ctor.NoEventNameError
-      return obj
+      obj.error = ctor.NoEventNameError;
+      return obj;
     }
 
-    obj.eventName = eventName
-    obj.eventModifier = eventModifier
-    obj.additionalEventModifiers = additionalEventModifiers
+    obj.eventName = eventName;
+    obj.eventModifier = eventModifier;
+    obj.additionalEventModifiers = additionalEventModifiers;
 
     /**
      * Not all actions have targets. But, let's check anyways.
      */
-    const globalTarget = this.findGlobalTarget(scanner)
+    const globalTarget = this.findGlobalTarget(scanner);
 
     if (globalTarget) {
-      obj.globalTarget = globalTarget
+      obj.globalTarget = globalTarget;
     }
 
     // Puts us at either "->" or "@"
-    const controllerName = this.findControllerName(scanner)
+    const controllerName = this.findControllerName(scanner);
 
     // If controllerName is empty, we no-op because the syntax is probably wrong.
     if (!controllerName) {
-      obj.error = ctor.NoControllerNameError
-      return obj
+      obj.error = ctor.NoControllerNameError;
+      return obj;
     }
 
-    obj.controllerName = controllerName
+    obj.controllerName = controllerName;
 
-    const controllerFunction = this.findControllerFunction(scanner)
+    const controllerFunction = this.findControllerFunction(scanner);
 
     if (!controllerFunction) {
       /**
        * No controller function found. No-op here and let it fail validation.
        */
 
-      obj.error = ctor.NoControllerFunctionError
-      return obj
+      obj.error = ctor.NoControllerFunctionError;
+      return obj;
     }
 
-    obj.controllerFunction = controllerFunction
+    obj.controllerFunction = controllerFunction;
 
-    const actionOptions = this.findActionOptions(scanner)
+    const actionOptions = this.findActionOptions(scanner);
 
-    obj.actionOptions = actionOptions
+    obj.actionOptions = actionOptions;
 
-    return obj
+    return obj;
   }
 
   /**
@@ -123,22 +123,22 @@ export class ActionParser {
    * @param {StringScanner} scanner
    * @return {Array<string>}
    */
-  findActionOptions (scanner) {
+  findActionOptions(scanner) {
     /**
      * @type {Array<string>}
      */
-    let actionOptions = []
+    let actionOptions = [];
 
     while (!scanner.done) {
-      const action = this.findActionOption(scanner)
-      actionOptions.push(action)
+      const action = this.findActionOption(scanner);
+      actionOptions.push(action);
 
       if (action === "") {
-        return actionOptions
+        return actionOptions;
       }
     }
 
-    return actionOptions
+    return actionOptions;
   }
 
   /**
@@ -146,26 +146,26 @@ export class ActionParser {
    * @param {StringScanner} scanner
    * @return {string}
    */
-  findActionOption (scanner) {
-    let actionOption = ""
+  findActionOption(scanner) {
+    let actionOption = "";
 
     if (scanner.currentCharacter !== ":") {
-      return actionOption
+      return actionOption;
     }
 
     // Remove the ":"
-    scanner.pop()
+    scanner.pop();
 
     while (!scanner.done) {
       if (scanner.peek() === ":") {
-        actionOption += scanner.pop()
-        return actionOption
+        actionOption += scanner.pop();
+        return actionOption;
       }
 
-      actionOption += scanner.pop()
+      actionOption += scanner.pop();
     }
 
-    return actionOption
+    return actionOption;
   }
 
   /**
@@ -173,25 +173,25 @@ export class ActionParser {
    * @param {StringScanner} scanner
    * @return {string}
    */
-  findControllerFunction (scanner) {
-    let controllerFunction = ""
+  findControllerFunction(scanner) {
+    let controllerFunction = "";
 
     if (scanner.currentCharacter !== "#") {
-      return controllerFunction
+      return controllerFunction;
     }
 
-    scanner.pop()
+    scanner.pop();
 
     while (!scanner.done) {
       if (scanner.peek() === ":") {
-        controllerFunction += scanner.pop()
-        return controllerFunction
+        controllerFunction += scanner.pop();
+        return controllerFunction;
       }
 
-      controllerFunction += scanner.pop()
+      controllerFunction += scanner.pop();
     }
 
-    return controllerFunction
+    return controllerFunction;
   }
 
   /**
@@ -199,26 +199,26 @@ export class ActionParser {
    * @param {StringScanner} scanner
    * @return {string}
    */
-  findControllerName (scanner) {
-    let controllerName = ""
+  findControllerName(scanner) {
+    let controllerName = "";
 
     if (scanner.currentCharacter + scanner.peek() !== "->") {
-      return controllerName
+      return controllerName;
     }
 
     // Remove the "->"
-    scanner.pop(2)
+    scanner.pop(2);
 
     while (!scanner.done) {
       if (scanner.peek() === "#") {
-        controllerName += scanner.pop()
-        return controllerName
+        controllerName += scanner.pop();
+        return controllerName;
       }
 
-      controllerName += scanner.pop()
+      controllerName += scanner.pop();
     }
 
-    return controllerName
+    return controllerName;
   }
 
   /**
@@ -226,26 +226,26 @@ export class ActionParser {
    * @param {StringScanner} scanner
    * @return {string}
    */
-  findGlobalTarget (scanner) {
-    let globalTarget = ""
+  findGlobalTarget(scanner) {
+    let globalTarget = "";
 
     if (scanner.currentCharacter !== "@") {
-      return globalTarget
+      return globalTarget;
     }
 
     // Remove the "@"
-    scanner.pop()
+    scanner.pop();
 
     while (!scanner.done) {
       if (scanner.peek(2) === "->") {
-        globalTarget += scanner.pop()
-        return globalTarget
+        globalTarget += scanner.pop();
+        return globalTarget;
       }
 
-      globalTarget += scanner.pop()
+      globalTarget += scanner.pop();
     }
 
-    return globalTarget
+    return globalTarget;
   }
 
   /**
@@ -253,38 +253,38 @@ export class ActionParser {
    * @param {StringScanner} scanner
    * @return {EventTokens}
    */
-  parseEvent (scanner) {
-    let parsedStr = ""
+  parseEvent(scanner) {
+    let parsedStr = "";
 
     while (!scanner.done) {
       if (scanner.peek() === "@" || scanner.peek(2) === "->") {
-        parsedStr += scanner.pop()
-        break
+        parsedStr += scanner.pop();
+        break;
       }
-      parsedStr += scanner.pop()
+      parsedStr += scanner.pop();
     }
 
-    const splitStr = parsedStr.split(/\./)
-    const eventName = splitStr[0]
-    const modifiers = (splitStr[1] || "").split(/\+/)
+    const splitStr = parsedStr.split(/\./);
+    const eventName = splitStr[0];
+    const modifiers = (splitStr[1] || "").split(/\+/);
 
     /**
      * @type Array<string>
      */
-    const additionalEventModifiers = []
+    const additionalEventModifiers = [];
 
     // Remove the last modifier which is the original "modifier"
-    const eventModifier = modifiers.pop() || ""
+    const eventModifier = modifiers.pop() || "";
 
     // Find additionalEventModifiers
     if (modifiers.length > 0) {
-      modifiers.forEach((modifier) => additionalEventModifiers.push(modifier))
+      modifiers.forEach((modifier) => additionalEventModifiers.push(modifier));
     }
 
     return {
       eventName,
       eventModifier,
-      additionalEventModifiers
-    }
+      additionalEventModifiers,
+    };
   }
 }

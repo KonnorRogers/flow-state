@@ -1,11 +1,11 @@
 export class StringScanner {
-  #input
-  #cursor
+  #input;
+  #cursor;
 
   /**
    * @param {string} input
    */
-  constructor (input) {
+  constructor(input) {
     /**
      * @type {string}
      */
@@ -17,26 +17,26 @@ export class StringScanner {
     this.#cursor = 0;
   }
 
-  get input () {
-    return this.#input
+  get input() {
+    return this.#input;
   }
 
-  get currentCharacter () {
-    return this.input[this.cursor]
+  get currentCharacter() {
+    return this.input[this.cursor];
   }
 
   /**
    * @return {number}
    */
-  get cursor () {
+  get cursor() {
     return this.#cursor;
   }
 
   /**
    * If cursor is at the end of the string
    */
-  get done () {
-    return this.cursor >= this.input.length
+  get done() {
+    return this.cursor >= this.input.length;
   }
 
   /**
@@ -45,14 +45,14 @@ export class StringScanner {
    * @param {number} [distance=1]
    * @return {string} 1 or multiple characters depending on distance.
    */
-  peek (distance = 1) {
-    let str = ""
+  peek(distance = 1) {
+    let str = "";
 
     for (let i = 1; i <= distance; i++) {
       str += this.input[this.cursor + i];
     }
 
-    return str
+    return str;
   }
 
   /**
@@ -61,15 +61,15 @@ export class StringScanner {
    * @param {number} [distance=1]
    * @return {string} characters or ''
    */
-  pop (distance = 1) {
-    let str = ""
+  pop(distance = 1) {
+    let str = "";
 
     for (let i = 0; i < distance; i++) {
       str += this.input[this.#cursor];
-      this.#cursor++
+      this.#cursor++;
     }
 
-    return str
+    return str;
   }
 
   /**
@@ -81,9 +81,9 @@ export class StringScanner {
    * @return {string|undefined}
    * @throws {Error} given regex global flag not set
    */
-  scan (regex) {
+  scan(regex) {
     if (!regex.global) {
-      throw Error('regex global flag must be set');
+      throw Error("regex global flag must be set");
     }
 
     regex.lastIndex = this.#cursor;
@@ -98,5 +98,5 @@ export class StringScanner {
     return match[0];
   }
 
-// ...
-};
+  // ...
+}

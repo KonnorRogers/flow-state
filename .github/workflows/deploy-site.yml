@@ -37,7 +37,7 @@ jobs:
     strategy:
       matrix:
         node-version: [22]
-        ruby-version: ['3.2']
+        ruby-version: ["3.2"]
     env:
       PR_PATH: pull/${{github.event.number}}
     steps:
@@ -123,4 +123,3 @@ jobs:
           number: ${{ github.event.number }}
           id: deploy-preview
           message: "A preview of ${{ github.event.after }} is uploaded and can be seen here:\n\n ✨ ${{ env.BASE_URL }} ✨\n\nChanges may take a few minutes to propagate. Since this is a preview of production, content with `draft: true` will not be rendered. The source is here: https://github.com/${{ github.repository }}/tree/gh-pages/${{ env.PR_PATH }}/"
-
