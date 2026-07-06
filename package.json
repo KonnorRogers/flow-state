@@ -33,14 +33,12 @@
     "build:api": "typedoc --out ./docs/output/references/api/ ./exports/**/*.js",
     "build:api-json": "typedoc --json ./typedoc-generation.json ./exports/**/*.js",
     "build:cdn": "node esbuild.config.js",
-    "build:cem": "custom-elements-manifest analyze",
     "build:docs": "pnpm run build && cd docs && pnpm run build",
-    "build": "npm run clean && tsc && npm run build:cem &&  npm run build:cdn",
+    "build": "npm run clean && tsc && npm run build:cdn",
     "clean": "rimraf -g \"./{exports,internal}/**/*.d.ts\" -g \"./cdn\"",
     "create:component": "plop component --plopfile scripts/plop/plopfile.js",
     "rename-package": "plop rename-package --plopfile scripts/plop/plopfile.js",
     "plop": "plop --plopfile scripts/plop/plopfile.js",
-    "watch:cem": "custom-elements-manifest analyze --watch",
     "analyze": "custom-elements-manifest analyze --litelement",
     "update-version": "node scripts/update-version.js",
     "version": "npm run update-version && npm run build && git add internal/version.js",
@@ -69,7 +67,6 @@
   "devDependencies": {
     "@11ty/eleventy": "3.1.6",
     "@awesome.me/webawesome": "^3.10.0",
-    "@custom-elements-manifest/analyzer": "0.10.2",
     "@esm-bundle/chai": "4.3.4-fix.0",
     "@lit-labs/eleventy-plugin-lit": "^1.0.6",
     "@open-wc/testing": "^4.0.0",
@@ -79,7 +76,6 @@
     "@web/test-runner": "^0.18.2",
     "@web/test-runner-commands": "^0.9.0",
     "@web/test-runner-playwright": "^0.11.0",
-    "cem-plugin-expanded-types": "^1.3.1",
     "esbuild": "^0.23.0",
     "fdir": "^6.3.0",
     "flow-state": "file:.",
@@ -95,6 +91,5 @@
     "typedoc": "^0.26.1",
     "typescript": "~5.5.2"
   },
-  "customElements": "custom-elements.json",
   "dependencies": {}
 }
