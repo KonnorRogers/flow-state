@@ -1,5 +1,8 @@
 import { ActionParser } from "../internal/action-parser.js";
 import { Controller } from "./controller.js";
+import { reactive, globalBus } from "./reactive.js"
+
+export { reactive }
 
 class GlobalController extends Controller {}
 
@@ -150,6 +153,9 @@ export class Application {
     this.register(GlobalController, "global");
     this._createControllerInstance("global", this.rootElement);
     this.globalController = this.getController(this.rootElement, "global");
+    this.globalBus = globalBus
+    const updateContext = () => this.updateContext()
+    this.globalBus.addEventListener("change", updateContext)
   }
 
   /**
