@@ -20,11 +20,11 @@ test("Should properly parse actions 1", () => {
   const obj = new ActionParser(action).parse();
 
   assert.equal(obj.eventName, "scroll");
-  assert.equal(obj.eventModifier, "");
+  assert.equal(obj.eventModifier, null);
   assert.equal(obj.additionalEventModifiers.length, 0);
   assert.equal(obj.controllerName, "gallery");
   assert.equal(obj.controllerFunction, "layout");
-  assert.equal(obj.globalTarget, "");
+  assert.equal(obj.globalTarget, null);
   assert.equal(obj.actionOptions.length, 1);
   assert.equal(obj.actionOptions[0], "!passive");
 });
@@ -36,10 +36,10 @@ test("Should properly parse actions 2", () => {
 
   assert.equal(obj.eventName, "click");
   assert.equal(obj.additionalEventModifiers.length, 0);
-  assert.equal(obj.eventModifier, "");
+  assert.equal(obj.eventModifier, null);
   assert.equal(obj.controllerName, "gallery--details");
   assert.equal(obj.controllerFunction, "open");
-  assert.equal(obj.globalTarget, "");
+  assert.equal(obj.globalTarget, null);
   assert.equal(obj.actionOptions.length, 2);
   assert.equal(obj.actionOptions[0], "!capture");
   assert.equal(obj.actionOptions[1], "passive");
@@ -52,7 +52,7 @@ test("Should properly parse actions 3", () => {
 
   assert.equal(obj.eventName, "resize");
   assert.equal(obj.additionalEventModifiers.length, 0);
-  assert.equal(obj.eventModifier, "");
+  assert.equal(obj.eventModifier, null);
   assert.equal(obj.controllerName, "gallery");
   assert.equal(obj.controllerFunction, "layout");
   assert.equal(obj.globalTarget, "window");
@@ -65,7 +65,7 @@ test("Should properly parse actions 4", () => {
   const obj = new ActionParser(action).parse();
 
   assert.equal(obj.eventName, "my:custom-event");
-  assert.equal(obj.eventModifier, "");
+  assert.equal(obj.eventModifier, null);
   assert.equal(obj.additionalEventModifiers.length, 0);
   assert.equal(obj.controllerName, "gallery");
   assert.equal(obj.controllerFunction, "layout");
@@ -80,10 +80,10 @@ test("Should properly parse actions 5", () => {
 
   assert.equal(obj.eventName, "my-thing");
   assert.equal(obj.additionalEventModifiers.length, 0);
-  assert.equal(obj.eventModifier, "");
+  assert.equal(obj.eventModifier, null)
   assert.equal(obj.controllerName, "my-gallery");
   assert.equal(obj.controllerFunction, "my_function");
-  assert.equal(obj.globalTarget, "");
+  assert.equal(obj.globalTarget, null);
   assert.equal(obj.actionOptions.length, 0);
 });
 
@@ -97,7 +97,7 @@ test("Should properly parse key modifiers", () => {
   assert.equal(obj.additionalEventModifiers.length, 0);
   assert.equal(obj.controllerName, "my-gallery");
   assert.equal(obj.controllerFunction, "my_function");
-  assert.equal(obj.globalTarget, "");
+  assert.equal(obj.globalTarget, null);
   assert.equal(obj.actionOptions.length, 0);
 });
 
@@ -113,22 +113,22 @@ test("Should properly parse additional event modifiers", () => {
   assert.equal(obj.additionalEventModifiers[1], "ctrl");
   assert.equal(obj.controllerName, "my-gallery");
   assert.equal(obj.controllerFunction, "my_function");
-  assert.equal(obj.globalTarget, "");
+  assert.equal(obj.globalTarget, null);
   assert.equal(obj.actionOptions.length, 0);
 });
 
-test("no controllerName found", () => {
+test("falls back to global controller", () => {
   let action = "keydownescmy-gallery#my_function";
 
   const obj = new ActionParser(action).parse();
 
-  assert.equal(obj.eventName, "keydownescmy-gallery#my_function");
-  assert.equal(obj.eventModifier, "");
+  assert.equal(obj.eventName, "keydownescmy-gallery");
+  assert.equal(obj.eventModifier, null);
   assert.equal(obj.additionalEventModifiers.length, 0);
-  assert.equal(obj.controllerName, "");
-  assert.equal(obj.controllerFunction, "");
-  assert.equal(obj.globalTarget, "");
-  assert.equal(obj.error, ActionParser.NoControllerNameError);
+  assert.equal(obj.controllerName, "global");
+  assert.equal(obj.controllerFunction, "my_function");
+  assert.equal(obj.globalTarget, null);
+  assert.equal(obj.errors.length, 0);
   assert.equal(obj.actionOptions.length, 0);
 });
 
@@ -137,13 +137,13 @@ test("No event name found", () => {
 
   const obj = new ActionParser(action).parse();
 
-  assert.equal(obj.error, ActionParser.NoEventNameError);
-  assert.equal(obj.eventName, "");
-  assert.equal(obj.eventModifier, "");
+  assert.equal(obj.errors[0], ActionParser.NoEventNameError);
+  assert.equal(obj.eventName, null);
+  assert.equal(obj.eventModifier, null);
   assert.equal(obj.additionalEventModifiers.length, 0);
-  assert.equal(obj.controllerName, "");
-  assert.equal(obj.controllerFunction, "");
-  assert.equal(obj.globalTarget, "");
+  assert.equal(obj.controllerName, null);
+  assert.equal(obj.controllerFunction, null);
+  assert.equal(obj.globalTarget, null);
   assert.equal(obj.actionOptions.length, 0);
 });
 
@@ -152,12 +152,27 @@ test("No function name found", () => {
 
   const obj = new ActionParser(action).parse();
 
-  assert.equal(obj.error, ActionParser.NoControllerFunctionError);
+  assert.equal(obj.errors[0], ActionParser.NoControllerFunctionError);
   assert.equal(obj.eventName, "keydown");
   assert.equal(obj.eventModifier, "esc");
   assert.equal(obj.additionalEventModifiers.length, 0);
   assert.equal(obj.controllerName, "my-gallerymy_function");
-  assert.equal(obj.controllerFunction, "");
-  assert.equal(obj.globalTarget, "");
+  assert.equal(obj.controllerFunction, null);
+  assert.equal(obj.globalTarget, null);
+  assert.equal(obj.actionOptions.length, 0);
+});
+
+test("Omitted controller defaults to global controllerName", () => {
+  let action = "click#increment";
+
+  const obj = new ActionParser(action).parse();
+
+  assert.equal(obj.errors.length, 0);
+  assert.equal(obj.eventName, "click");
+  assert.equal(obj.eventModifier, null);
+  assert.equal(obj.additionalEventModifiers.length, 0);
+  assert.equal(obj.controllerName, "global");
+  assert.equal(obj.controllerFunction, "increment");
+  assert.equal(obj.globalTarget, null)
   assert.equal(obj.actionOptions.length, 0);
 });

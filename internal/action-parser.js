@@ -2,20 +2,20 @@ import { StringScanner } from "./string-scanner.js";
 
 /**
  * @typedef {object} ParsedAction
- * @property {string} controllerName - The name of the controller
- * @property {string} controllerFunction - The function to call
- * @property {string} eventName - The name of the event to trigger on
- * @property {string} eventModifier - The name of the event to trigger on
+ * @property {string | null} controllerName - The name of the controller
+ * @property {string | null} controllerFunction - The function to call
+ * @property {string | null} eventName - The name of the event to trigger on
+ * @property {string | null} eventModifier - The name of the event to trigger on
  * @property {Array<string>} additionalEventModifiers - additional event modifiers such as "ctrl", "alt", "shift", etc.
  * @property {Array<string>} actionOptions - Additional options IE: capture, passive, etc. https://stimulus.hotwired.dev/reference/actions#options.
  * @property {undefined | null | string} globalTarget - The target, IE: `@window`, `@document`.
- * @property {false | string} error - If there was an error parsing, it'll live here.
+ * @property {string[]} errors - If there was an error parsing, it'll live here.
  */
 
 /**
  * @typedef {object} EventTokens
  * @property {string} eventName - The name of the event
- * @property {string} eventModifier - IE: "a", "b", "c", etc.
+ * @property {string | null} eventModifier - IE: "a", "b", "c", etc.
  * @property {Array<string>} additionalEventModifiers - IE: "ctrl+", "shift+"
  */
 
@@ -48,14 +48,14 @@ export class ActionParser {
      * @type {ParsedAction}
      */
     const obj = {
-      eventName: "",
-      eventModifier: "",
+      eventName: null,
+      eventModifier: null,
       additionalEventModifiers: [],
-      globalTarget: "",
-      controllerName: "",
-      controllerFunction: "",
+      globalTarget: null,
+      controllerName: null,
+      controllerFunction: null,
       actionOptions: [],
-      error: false,
+      errors: [],
     };
 
     const scanner = new StringScanner(this.input);
@@ -70,7 +70,7 @@ export class ActionParser {
       /**
        * No event name found. No-op here and let it fail validation.
        */
-      obj.error = ctor.NoEventNameError;
+      obj.errors.push(ctor.NoEventNameError);
       return obj;
     }
 
@@ -92,7 +92,7 @@ export class ActionParser {
 
     // If controllerName is empty, we no-op because the syntax is probably wrong.
     if (!controllerName) {
-      obj.error = ctor.NoControllerNameError;
+      obj.errors.push(ctor.NoControllerNameError);
       return obj;
     }
 
@@ -105,7 +105,7 @@ export class ActionParser {
        * No controller function found. No-op here and let it fail validation.
        */
 
-      obj.error = ctor.NoControllerFunctionError;
+      obj.errors.push(ctor.NoControllerFunctionError);
       return obj;
     }
 
@@ -197,17 +197,21 @@ export class ActionParser {
   /**
    * Finds the `controllerName`, IE: "my-controller"
    * @param {StringScanner} scanner
-   * @return {string}
+   * @return {string | null}
    */
   findControllerName(scanner) {
     let controllerName = "";
 
-    if (scanner.currentCharacter + scanner.peek() !== "->") {
-      return controllerName;
+    if (scanner.currentCharacter + scanner.peek() !== "->" && scanner.currentCharacter !== "#") {
+      return null;
     }
 
-    // Remove the "->"
-    scanner.pop(2);
+    if (scanner.currentCharacter === "#") {
+      return "global"
+    } else {
+      // Remove the "->"
+      scanner.pop(2);
+    }
 
     while (!scanner.done) {
       if (scanner.peek() === "#") {
@@ -218,19 +222,19 @@ export class ActionParser {
       controllerName += scanner.pop();
     }
 
-    return controllerName;
+    return controllerName || null;
   }
 
   /**
    * Finds the `globalTarget`. Either `@window` or `@document` usually.
    * @param {StringScanner} scanner
-   * @return {string}
+   * @return {string | null}
    */
   findGlobalTarget(scanner) {
     let globalTarget = "";
 
     if (scanner.currentCharacter !== "@") {
-      return globalTarget;
+      return null;
     }
 
     // Remove the "@"
@@ -245,7 +249,7 @@ export class ActionParser {
       globalTarget += scanner.pop();
     }
 
-    return globalTarget;
+    return globalTarget || null;
   }
 
   /**
@@ -257,7 +261,8 @@ export class ActionParser {
     let parsedStr = "";
 
     while (!scanner.done) {
-      if (scanner.peek() === "@" || scanner.peek(2) === "->") {
+      const nextChar = scanner.peek()
+      if (["@", "#"].includes(nextChar) || scanner.peek(2) === "->") {
         parsedStr += scanner.pop();
         break;
       }
@@ -274,7 +279,7 @@ export class ActionParser {
     const additionalEventModifiers = [];
 
     // Remove the last modifier which is the original "modifier"
-    const eventModifier = modifiers.pop() || "";
+    const eventModifier = modifiers.pop() || null
 
     // Find additionalEventModifiers
     if (modifiers.length > 0) {

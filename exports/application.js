@@ -499,7 +499,6 @@ export class Application {
 
       inst.initialize();
       controllerInstanceMap.set(controllerName, inst);
-      console.log({ inst });
     }
 
     if (!inst.isConnected) {
@@ -801,7 +800,7 @@ export class Application {
         str = str.trim();
         if (str) {
           const parsedAction = new ActionParser(str).parse();
-          if (parsedAction.error) {
+          if (parsedAction.errors.length > 0) {
             return;
           }
 
@@ -843,7 +842,7 @@ export class Application {
    * @param {HTMLElement} element
    */
   addParsedActionToElement(parsedAction, element) {
-    if (parsedAction.error) {
+    if (parsedAction.errors.length > 0) {
       return;
     }
 
@@ -857,6 +856,9 @@ export class Application {
       actionOptions,
     } = parsedAction;
 
+    if (!controllerName) { return }
+    if (!eventName) { return }
+
     const keymapSchema = this.keymapSchema;
     const modifierSchema = this.modifierSchema;
     const self = this;
@@ -869,6 +871,7 @@ export class Application {
     const fn = function (evt) {
       let shouldCallFunction = true;
 
+
       // The controller may not always be at the element level. We need to search for its closest parent controller, we use closest on the target *IN CASE* the controller is defined on the current element.
       let closestControllerElement = null;
 
@@ -879,8 +882,6 @@ export class Application {
           self._controllerQuery(controllerName),
         );
       }
-
-      console.log({ closestControllerElement });
 
       if (!closestControllerElement) {
         // TODO: Should we throw an error if no controller found? Maybe in debug logs?
@@ -898,7 +899,6 @@ export class Application {
         );
       }
 
-      console.log({ controller });
       // This will need to check the keymapSchema to see if it should fire.
       if (eventModifier && evt instanceof KeyboardEvent) {
         // Make it false so we have to override it in the loop.
