@@ -14,6 +14,28 @@ Right now im affectionately calling it "downflow", with the idea being data "flo
 
 ## Documentation
 
+`flow-controller` - mixins
+`flow-action` - events
+`flow-text` - sets `element.textContent`
+`flow-component` - "stamps" a component for re-rendering.
+
+```html
+<script type="template">
+    <div data-component="foo">
+        <button data-action="#decrement">-</button>
+        <span flow-text="context.foo"></span>
+        <button data-action="#increment">+</button>
+    </div>
+</script>
+
+<div data-component="foo">
+    <button data-action="#decrement">-</button>
+    <span>0</span>
+    <button data-action="#increment">+</button>
+</div>
+```
+
+
 Coming Soon™️
 
 ## Structure
