@@ -21,56 +21,53 @@ export class Controller {
    * @param {string} options.controllerName
    */
   constructor({ element, application, controllerName }) {
-    /** @type {typeof Controller} */ (this.constructor).targets.forEach(
-      (targetName) => {
-        const ctor = /** @type {typeof Controller} */ (this.constructor);
+    const ctor = /** @type {typeof Controller} */ (this.constructor);
+    if (!ctor.__finalized__) {
+      ctor.__finalized__ = true;
+      ctor.targets.forEach((targetName) => {
         // Make sure target calls are accessible in the constructor.
-        if (!ctor.__finalized__) {
-          ctor.__finalized__ = true;
+        Object.defineProperties(ctor.prototype, {
+          [`${targetName}Targets`]: {
+            get() {
+              /**
+                * @type {HTMLElement[]}
+                */
+              const ary = [];
+              /** @type {NodeListOf<HTMLElement>} */ (
+                this.element.querySelectorAll(
+                  this.application._targetQuery(
+                    this.controllerName,
+                    targetName,
+                  ),
+                )
+              ).forEach((el) => {
+                if (
+                  el.closest(
+                    this.application._controllerQuery(this.controllerName),
+                  ) !== this.element
+                ) {
+                  return;
+                }
 
-          Object.defineProperties(ctor.prototype, {
-            [`${targetName}Targets`]: {
-              get() {
-                /**
-                 * @type {HTMLElement[]}
-                 */
-                const ary = [];
-                /** @type {NodeListOf<HTMLElement>} */ (
-                  this.element.querySelectorAll(
-                    this.application._targetQuery(
-                      this.controllerName,
-                      targetName,
-                    ),
-                  )
-                ).forEach((el) => {
-                  if (
-                    el.closest(
-                      this.application._controllerQuery(this.controllerName),
-                    ) !== this.element
-                  ) {
-                    return;
-                  }
+                ary.push(el);
+              });
 
-                  ary.push(el);
-                });
-
-                return ary;
-              },
+              return ary;
             },
-            [`has${capitalize(targetName)}Target`]: {
-              get() {
-                return Boolean(this[`${targetName}Target`]);
-              },
+          },
+          [`has${capitalize(targetName)}Target`]: {
+            get() {
+              return Boolean(this[`${targetName}Target`]);
             },
-            [`${targetName}Target`]: {
-              get() {
-                return this[`${targetName}Targets`]?.[0] || null;
-              },
+          },
+          [`${targetName}Target`]: {
+            get() {
+              return this[`${targetName}Targets`]?.[0] || null;
             },
-          });
-        }
-      },
-    );
+          },
+        });
+      });
+    }
 
     /**
      * @type {Element}
