@@ -14,12 +14,17 @@ Right now im affectionately calling it "downflow", with the idea being data "flo
 
 ## Documentation
 
-- `flow-controller` - mixins (Stimulus Controllers)
-- `flow-action` - events
-- `flow-text` - sets `element.textContent`
-- `flow-component` - "stamps" a component for re-rendering.
-- `flow-render` - Renders a component with a given name
-- `flow-scope` - Sets a top level scope that can be accessed via `#<key>`
+- `flow-controller="<controller_name>"` - mixins (Stimulus Controllers)
+- `flow-action="<event>"` - events
+- `flow-text="<state>"` - sets `element.textContent`
+
+## Not implemented
+
+- `flow-prop="<property>:<value>"` - sets a given property
+- `flow-attr="<attribute>:<value>"` - sets a given attribute
+- `flow-component="<name>"` - "stamps" a component for re-rendering.
+- `flow-render="<component-name>"` - Renders a component with a given name
+- `flow-scope="<state>"` - Sets a top level scope that can be accessed via `#<key>`
 
 ```html
 <template flow-component="bar">
